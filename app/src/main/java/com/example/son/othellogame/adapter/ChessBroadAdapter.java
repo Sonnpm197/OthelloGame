@@ -75,21 +75,16 @@ public class ChessBroadAdapter extends RecyclerView.Adapter<ChessBroadAdapter.Vi
             chess.setOnClickListener(new Button.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-//                    if (!othelloLogic.onClickedListener(getPosition())) {
-//                        Toast.makeText(context, "You cannot move without capturing component's pieces", Toast.LENGTH_SHORT).show();
-//                    }
-
-                    List<Integer> l = othelloLogic.onClickedListener(getPosition());
-                    if (l == null) {
+                    List<Integer> changedPositions = othelloLogic.onClickedListener(getPosition());
+                    if (changedPositions == null) {
                         Toast.makeText(context, "You cannot move without capturing component's pieces", Toast.LENGTH_SHORT).show();
                         return;
                     }
 
                     // reload recycler view
-//                    ChessBroadAdapter.this.notifyDataSetChanged();
                     // TODO: notify each changed piece
-                    for (int i = 0; i < l.size(); i++) {
-                        notifyItemChanged(l.get(i));
+                    for (int i = 0; i < changedPositions.size(); i++) {
+                        notifyItemChanged(changedPositions.get(i));
                     }
 //                    Toast.makeText(context, "Position: " + getPosition(), Toast.LENGTH_SHORT).show();
                 }

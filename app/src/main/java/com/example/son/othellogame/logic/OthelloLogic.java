@@ -77,47 +77,10 @@ public class OthelloLogic {
      * Whenever user clicks on a button, get returned list's position and calculate real x & y positions
      * Rules:
      * <p>Black goes first</p>
+     * <p>Opponent's pieces must be captured at least 1</p>
      *
      * @param broadPosition
      */
-//    public boolean onClickedListener(int broadPosition) {
-//
-//        capturedPieces = new ArrayList<>();
-//        clickedPiece = listChess.get(broadPosition);
-//        Log.i(tag, "X: " + getPositionX(broadPosition) + ";Y: " + getPositionY(broadPosition));
-//        // Prevent user clicks on a existed chess
-//        if (clickedPiece.getColor() != null) {
-//            return false;
-//        }
-//
-//        // Prevent user clicks randomly on broad (clicked piece must be near by exited pieces)
-//        if (!checkAroundClickedPiece(broadPosition)) {
-//            return false;
-//        }
-//
-//        // Perform validate main & minor crosses, horizon & vertical
-//        boolean availablePlace = updateChessBroad(broadPosition);
-//        if (!availablePlace) {
-//            return false;
-//        } else {
-//            // Change color after all validations done
-//            if (chessBroadAdapter.isFirstTime()) {
-//                chessBroadAdapter.setFirstTime(false);
-//                currentColor = WHITE.getValue();
-//                oppositeColor = BLACK.getValue();
-//            } else {
-//                if (currentColor.equals(BLACK.getValue())) {
-//                    currentColor = WHITE.getValue();
-//                    oppositeColor = BLACK.getValue();
-//                } else {
-//                    currentColor = BLACK.getValue();
-//                    oppositeColor = WHITE.getValue();
-//                }
-//            }
-//            return true;
-//        }
-//    }
-
 
     public List<Integer> onClickedListener(int broadPosition) {
 
@@ -198,18 +161,6 @@ public class OthelloLogic {
      * @param broadPosition
      * @return boolean to show the place is available
      */
-//    private boolean updateChessBroad(int broadPosition) {
-//        int x = getPositionX(broadPosition);
-//        int y = getPositionY(broadPosition);
-//        validateMainCross(x, y);
-//        validateMinorCross(x, y);
-//        validateHorizon(x, y);
-//        validateVertical(x, y);
-//        updateCapturedPiecesAndClickedPiece();
-//        //Log.i(tag, "Turn: " + currentColor + ";Size: " + capturedPieces.size());
-//        // Make sure you can capture at least 1 piece of your opponent or return false
-//        return (capturedPieces.size() > 0);
-//    }
 
     private List<Integer> updateChessBroad(int broadPosition) {
         int x = getPositionX(broadPosition);
@@ -221,12 +172,12 @@ public class OthelloLogic {
         updateCapturedPiecesAndClickedPiece();
         //Log.i(tag, "Turn: " + currentColor + ";Size: " + capturedPieces.size());
         // Make sure you can capture at least 1 piece of your opponent or return false
-        List<Integer> l = new ArrayList<>();
+        List<Integer> capturedPositions = new ArrayList<>();
         for (ChessPiece chessPiece: capturedPieces) {
-            l.add(chessPiece.getPosition());
+            capturedPositions.add(chessPiece.getPosition());
         }
-        l.add(clickedPiece.getPosition());
-        return l;
+        capturedPositions.add(clickedPiece.getPosition());
+        return capturedPositions;
     }
 
     /**
