@@ -147,11 +147,6 @@ public class FirebaseModel {
      *                  receiverId
      *                  pieceColor
      *                  pieceLocation
-     *          receiverId
-     *              (obj 1)
-     *                  senderId
-     *                  pieceColor
-     *                  pieceLocation
      *
      * @param senderId
      * @param receiverId
