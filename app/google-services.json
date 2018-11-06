@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "277928188365",
+    "firebase_url": "https://othellomultiplayers.firebaseio.com",
+    "project_id": "othellomultiplayers",
+    "storage_bucket": "othellomultiplayers.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:277928188365:android:3ff25c4ab215cdd9",
+        "android_client_info": {
+          "package_name": "com.example.son.othellogame"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "277928188365-ruguhrjh8mm51masrhpdp9bceo1baaet.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.son.othellogame",
+            "certificate_hash": "9f4827882b722b6c1c64140b381dcf4e4d177d57"
+          }
+        },
+        {
+          "client_id": "277928188365-2v0gp5p61sh5mqdm1l3rft1kn1d1snfm.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDdJMnPZSEEKG8uZqg2uk0JSB_t3mV4Y9E"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "277928188365-2v0gp5p61sh5mqdm1l3rft1kn1d1snfm.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
