@@ -56,8 +56,6 @@ public class ChessBroadAdapter extends RecyclerView.Adapter<ChessBroadAdapter.Vi
                 holder.chess.setBackground(context.getResources().getDrawable(R.drawable.white_piece));
             }
         }
-//        holder.chess.setText(piece.getColor());
-        // TODO: add information of each chess here
     }
 
     @Override
@@ -82,11 +80,10 @@ public class ChessBroadAdapter extends RecyclerView.Adapter<ChessBroadAdapter.Vi
                     }
 
                     // reload recycler view
-                    // TODO: notify each changed piece
+                    // notify each changed piece
                     for (int i = 0; i < changedPositions.size(); i++) {
                         notifyItemChanged(changedPositions.get(i));
                     }
-//                    Toast.makeText(context, "Position: " + getPosition(), Toast.LENGTH_SHORT).show();
                 }
             });
         }
