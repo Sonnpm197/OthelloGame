@@ -4,10 +4,10 @@ public class PlayingPiece {
 
     private String senderId;
     private String receiverId;
-    private String location;
+    private int location;
     private String pieceColor;
 
-    public PlayingPiece(String senderId, String receiverId, String location, String pieceColor) {
+    public PlayingPiece(String senderId, String receiverId, int location, String pieceColor) {
         this.senderId = senderId;
         this.receiverId = receiverId;
         this.location = location;
@@ -33,11 +33,11 @@ public class PlayingPiece {
         this.receiverId = receiverId;
     }
 
-    public String getLocation() {
+    public int getLocation() {
         return location;
     }
 
-    public void setLocation(String location) {
+    public void setLocation(int location) {
         this.location = location;
     }
 
@@ -51,6 +51,6 @@ public class PlayingPiece {
 
     @Override
     public String toString() {
-        return "location: " + location + "; color: " + pieceColor;
+        return " location: " + location + "; color: " + pieceColor;
     }
 }

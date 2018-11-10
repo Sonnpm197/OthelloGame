@@ -9,8 +9,8 @@ public class ChessPiece {
     private int position;
 
     public enum PieceColor {
-        BLACK("b"),
-        WHITE("w");
+        BLACK("black"),
+        WHITE("white");
 
         private String xColor;
 
