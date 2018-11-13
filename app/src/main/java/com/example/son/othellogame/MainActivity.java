@@ -7,6 +7,9 @@ import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.widget.TextView;
 import android.support.v7.widget.Toolbar;
 import android.widget.Toast;
@@ -79,8 +82,11 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Invit
         // Send invitation to friend here
         if (friendStatus.equals(User.Status.ONLINE.getValue())) {
             firebaseModel.sendMessage(userName.getText().toString(), firebaseModel.getCurrentUserId(), friendId, Message.Type.INVITE.getValue(), null);
-        } else {
+            firebaseModel.updateCurrentUserStatus(User.Status.PLAYING.getValue()); // Update status while inviting
+        } else if (friendStatus.equals(User.Status.OFFLINE.getValue())){
             Toast.makeText(this, "This friend is offline. Please find someone online", Toast.LENGTH_SHORT).show();
+        } else if (friendStatus.equals(User.Status.PLAYING.getValue())) {
+            Toast.makeText(this, "This friend is playing. Please find someone else", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -101,6 +107,9 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Invit
             String messageType = message.getMessageType();
             if (messageType.equals(Message.Type.INVITE.getValue())) {
                 // If you got an invitation
+                // first you have to set status to playing
+                firebaseModel.updateCurrentUserStatus(User.Status.PLAYING.getValue());
+
                 builder.setMessage(message.getSenderName() + " invited you to play a game.")
                         .setPositiveButton("Accept", new DialogInterface.OnClickListener() {
                             @Override
@@ -122,14 +131,18 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Invit
                             public void onClick(DialogInterface dialogInterface, int i) {
                                 firebaseModel.sendMessage(userName.getText().toString(), firebaseModel.getCurrentUserId()
                                         , message.getSenderId(), Message.Type.DENY.getValue(), null);
+
+                                // reset status
+                                firebaseModel.updateCurrentUserStatus(User.Status.ONLINE.getValue());
                             }
                         });
-            } else if (messageType.equals(Message.Type.QUIT.getValue())) {
-
             } else if (messageType.equals(Message.Type.DENY.getValue())) {
                 // If you invited and your opponent denied your request
                 builder.setMessage("Your opponent does not want to play with you.")
                         .setPositiveButton("OK", null);
+
+                // reset status
+                firebaseModel.updateCurrentUserStatus(User.Status.ONLINE.getValue());
 
             } else if (messageType.equals(Message.Type.ACCEPT.getValue())) {
                 // If you invited and your opponent accepted
@@ -146,5 +159,30 @@ public class MainActivity extends AppCompatActivity implements UserAdapter.Invit
         }
     }
 
+    /**
+     * Prevent user go back
+     */
+    @Override
+    public void onBackPressed() {
+    }
 
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.logoutBtn:
+                firebaseModel.signOut();
+                Intent intent = new Intent(MainActivity.this, StartActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intent);
+            return true;
+        }
+
+        return false;
+    }
 }

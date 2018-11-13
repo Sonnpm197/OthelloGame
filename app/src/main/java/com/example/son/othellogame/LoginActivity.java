@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -65,5 +66,18 @@ public class LoginActivity extends AppCompatActivity {
     public void redirectToMainActivity() {
         Intent mainActivityIntent = new Intent(LoginActivity.this, MainActivity.class);
         startActivity(mainActivityIntent);
+        finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        Log.i("sondeptrai", "onDestroy");
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.i("sondeptrai", "onPause");
     }
 }

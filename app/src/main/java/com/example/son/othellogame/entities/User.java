@@ -2,8 +2,9 @@ package com.example.son.othellogame.entities;
 
 public class User {
 
-    private String id, userName, status;
+    private String id, userName, status, email;
     public enum Status{
+        PLAYING("playing"),
         ONLINE("online"),
         OFFLINE("offline");
 
@@ -48,5 +49,13 @@ public class User {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

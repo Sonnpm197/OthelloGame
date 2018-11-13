@@ -7,9 +7,10 @@ public class Message {
         QUIT("quit"), // 1 user randomly quits
         DENY("deny"),// received invitation but opponent doesn't accept
         ACCEPT("accept"),// opponent accepted
-        LOST_TURN("lost turn"),
-        GAME_OVER_BY_NO_MOVES_BOTH_PLAYERS("game over by no more moves for both players"),
-        GAME_OVER_BY_FULL_BOARD("game over by full board"); // game over by full board
+        YOU_LOST_TURN("you lost turn"),
+        OPPONENT_LOST_TURN("opponent lost turn"),
+        GAME_OVER_BY_NO_MOVES_BOTH_PLAYERS("Both players have no other moves. Game over."),
+        GAME_OVER_BY_FULL_BOARD("Board is full. Game over."); // game over by full board
 
         private String value;
 

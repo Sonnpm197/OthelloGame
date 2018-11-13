@@ -4,12 +4,10 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.example.son.othellogame.GamePlayActivity;
-import com.example.son.othellogame.adapter.ChessBroadAdapter;
 import com.example.son.othellogame.entities.ChessPiece;
 import com.example.son.othellogame.entities.Message;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import static com.example.son.othellogame.entities.ChessPiece.PieceColor.BLACK;
@@ -21,19 +19,16 @@ public class OthelloLogic {
     public static final int COLUMN_QUANTITY = 8;
     private static final String TAG = OthelloLogic.class.getSimpleName();
 
-    private ChessBroadAdapter chessBroadAdapter;
     private List<ChessPiece> listChess; // get piece by broad position (not by dimension values) and show on UI (0 -> 64)
     private ChessPiece[][] matrixChess; // get by dimension values (row, col)
     private String currentColor; // to find who will go next and update board bases on this color
     private String yourColor, opponentColor;
     private ChessPiece clickedPiece; // clickedPiece each turn onClickedListener
     private List<ChessPiece> capturedPieces; // captured pieces from opponent each turn
-    private String previousSwapTurnColor;
     private GamePlayActivity gamePlayActivity;
-    private boolean lostTurn = false; // when you have no other move then change to component
     private boolean yourTurn = true;
     private boolean firstTime = true; // first time a piece hits on board
-    private boolean opponentLostTurn;
+    private boolean youLostTurn;
 
     public OthelloLogic(GamePlayActivity gamePlayActivity, String yourColor) {
         this.gamePlayActivity = gamePlayActivity; // context of GamePlayActivity
@@ -41,8 +36,13 @@ public class OthelloLogic {
         opponentColor = (yourColor.equals(BLACK.getValue()) ? WHITE.getValue() : BLACK.getValue());
     }
 
-    public void setOpponentLostTurn(boolean opponentLostTurn) {
-        this.opponentLostTurn = opponentLostTurn;
+    /**
+     * This flag is to handle the case when you receive a lost turn message
+     * then youLostTurn = true => yourTurn will be set to false => unable to hit on board
+     * @param youLostTurn
+     */
+    public void setYouLostTurn(boolean youLostTurn) {
+        this.youLostTurn = youLostTurn;
     }
 
     /**
@@ -117,14 +117,12 @@ public class OthelloLogic {
         // first time any piece hits on board
         firstTime = false;
 
-        // If your opponent lost turn => yourTurn
-        // If you receive a reverse color (from opponent) then accept and update to board
-        if (color.equals(opponentColor) || opponentLostTurn) {
+        if (color.equals(opponentColor)) { // normally when you receive from opponent you can hit now
             yourTurn = true;
-            opponentLostTurn = false;
         }
 
         // If user already hit then prevent them from not hitting the second time
+        // Or you lost your turn because you have no other moves
         if (!yourTurn) {
             Toast.makeText(gamePlayActivity, "It is not your turn yet. Please wait...", Toast.LENGTH_SHORT).show();
             return null;
@@ -141,32 +139,20 @@ public class OthelloLogic {
         // Prevent user clicks on a existed chess
         if (clickedPiece.getColor() != null) {
             Toast.makeText(gamePlayActivity, "You cannot click on an existed piece", Toast.LENGTH_SHORT).show();
-            clickedPiece = null;
             return null;
         }
 
         // Prevent user clicks randomly on broad (clicked piece must be near by exited pieces)
         if (!checkAroundClickedPiece(broadPosition)) {
             Toast.makeText(gamePlayActivity, "Your piece has to be near by other pieces", Toast.LENGTH_SHORT).show();
-            clickedPiece = null;
             return null;
         }
 
         // Perform validate main & minor crosses, horizon & vertical
         List<Integer> capturedPosition = updateChessBroad(broadPosition);
 
-        // Scan when you receive opponent piece and you have no turn left
-        // After updating all chess broad then check game over / lost turn
-        String messageType = "";
-
-        // gamePlayActivity will send and handle message when lost turn / full board
-        if (!messageType.equals("")) {
-            gamePlayActivity.sendResultMessageFromOthelloLogic(messageType);
-        }
-
         if (capturedPosition.size() <= 1) { // this will include both clickedPiece location and capturedLocation
             Toast.makeText(gamePlayActivity, "Cannot move without capturing any opponent piece(s)", Toast.LENGTH_SHORT).show();
-            clickedPiece = null;
             return null;
         } else {
 
@@ -175,31 +161,55 @@ public class OthelloLogic {
                 yourTurn = false;
             }
 
-            // Update data in gamePlayActivity
+            // Scan to check if board is full
+            String messageType = scanIfBoardIsFull();
+            if (!messageType.equals("")) {
+                gamePlayActivity.handleResultMessageFromOthelloLogic(messageType);
+            } else {
+                // After hitting on board scan opponent's available moves
+                // If opponent lost turn => you'll get a turn
+                messageType = scanAvailableMovesLeftForColor(opponentColor);
+
+                // gamePlayActivity will send and handle message when lost turn / full board
+                if (!messageType.equals("") && hitOnBoard) {
+                    gamePlayActivity.handleResultMessageFromOthelloLogic(messageType);
+                }
+            }
+
+            // Update scores (black and white) in gamePlayActivity
             gamePlayActivity.updateScore(calculateBlackAndWhitePieces());
+
+            // Even though you lost turn, you still have to receive piece from friend
+            if (youLostTurn) {
+                // Reset so next time you may have your turn
+                // If next time you receive a lost turn message => youLostTurn = true => here you still lose turn
+                youLostTurn = false;
+                yourTurn = false;// update currentTurn shown on UI to your opponent's color and prevent user who loses turn click on board
+            }
+
             gamePlayActivity.updateCurrentTurn(yourTurn);
 
-            clickedPiece = null;
             return capturedPosition;
         }
     }
 
     /**
      * Calculate sum of both pieces
+     * return an array black and white pieces number
      * @return
      */
-    private String calculateBlackAndWhitePieces() {
+    public int[] calculateBlackAndWhitePieces() {
         int blackPieces = 0;
         int whitePieces = 0;
         for (ChessPiece piece : listChess) {
             if (piece.getColor() != null && piece.getColor().equals(BLACK.getValue())) {
                 blackPieces++;
             } else if (piece.getColor() != null && piece.getColor().equals(WHITE.getValue())) {
-                whitePieces ++;
+                whitePieces++;
             }
         }
 
-        return "Black: " + blackPieces + " / White: " + whitePieces;
+        return new int[]{blackPieces, whitePieces};
     }
 
     /**
@@ -240,7 +250,7 @@ public class OthelloLogic {
     /**
      * Update chess broad by othello rules
      * Cannot move without capturing opponent's pieces
-     * This method will return clicked piece and all captured pieces by UI location
+     * This method will return clicked piece (only 1 time to render UI and clickedPiece will be null) and all captured pieces by UI location
      * This method is used to check in 2 cases:
      * 1. check if game over (before setting clickedPiece) -> clickedPiece = null
      * 2. check to update color after validating 4 crosses
@@ -282,8 +292,8 @@ public class OthelloLogic {
         // if (clickedPiece != null) {
         //            updateCapturedPiecesAndClickedPieceColor();
         //        }
-        // will not be able to update color for excessive empty piece
-        clickedPiece = null;
+        clickedPiece = null; // only update the first time this method called in clickListener
+        // If this method called in scanAvailableMovesLeftForColor then cannot update anything
         return capturedPositionsOnUI;
     }
 
@@ -579,7 +589,11 @@ public class OthelloLogic {
         }
     }
 
-    public String scanForFullBoard() {
+    /**
+     * Check if board is full
+     * @return
+     */
+    private String scanIfBoardIsFull() {
         boolean fullSlot = true;
         for (ChessPiece piece : listChess) {
             if (piece.getColor() == null) {
@@ -591,7 +605,7 @@ public class OthelloLogic {
         if (fullSlot) {
             String message = "Board is full. Game over";
             Log.i(TAG, message);
-            Toast.makeText(gamePlayActivity, message, Toast.LENGTH_SHORT).show();
+            //Toast.makeText(gamePlayActivity, message, Toast.LENGTH_SHORT).show();
             return Message.Type.GAME_OVER_BY_FULL_BOARD.getValue();
         }
         return "";
@@ -607,9 +621,8 @@ public class OthelloLogic {
      * <p>
      * return true if game over
      */
-    private String scanForColor() {
+    private String scanAvailableMovesLeftForColor(String opponentColor) {
         List<ChessPiece> availablePlaces = new ArrayList<>();
-
         // Filter the pieces which are not close to any others and have NO COLOR
         for (int i = 0; i < ROW_QUANTITY * COLUMN_QUANTITY; i++) {
             if (checkAroundClickedPiece(i) && listChess.get(i).getColor() == null) {
@@ -620,40 +633,60 @@ public class OthelloLogic {
         // Check for any pieces with your color to find any slots to take
         // If don't have any then you lost your turn
         int numberOfAvailableSlots = 0;
+        currentColor = opponentColor; // all validations are using currentColor
         for (ChessPiece piece : availablePlaces) {
             int position = piece.getPosition();
-            piece.setColor(currentColor); // assuming color to find available moves for current user
-            Log.i(TAG, "Scanning position: " + position + " with color: " + currentColor);
+//            Log.i(TAG, "Scanning position: " + position + " with color: " + color);
+            piece.setColor(opponentColor); // temporary set color to current color to check this position is available to hit
             List<Integer> capturedLocations = updateChessBroad(position);
+            piece.setColor(null); // reset color
             // This size will not include clickedPiece location so value can be 0
             if (capturedLocations.size() > 0) {
                 numberOfAvailableSlots += capturedLocations.size();
-                Log.i(TAG, "Moves found for " + currentColor + " at locations: " + Arrays.toString(capturedLocations.toArray()));
+//                Log.i(TAG, "Moves found for " + color + " at locations: " + Arrays.toString(capturedLocations.toArray()));
             }
-            piece.setColor(null); // reset to prevent update color
         }
 
-        Log.i(TAG, "Total available moves for: " + currentColor + " to place piece is " + numberOfAvailableSlots);
-
-        if (opponentLostTurn && numberOfAvailableSlots == 0) {
-            String message = "Both players have no moves available.";
-            Log.i(TAG, message);
-            Toast.makeText(gamePlayActivity, message, Toast.LENGTH_SHORT).show();
-            return Message.Type.GAME_OVER_BY_NO_MOVES_BOTH_PLAYERS.getValue();
-        }
+//        Log.i(TAG, "Total available moves for: " + color + " to place piece is " + numberOfAvailableSlots);
 
         // After the loop if we cannot find any places
         if (numberOfAvailableSlots == 0) {
-            String message = "Current color: " + currentColor + " has no move available, swap turn to your opponent.";
+            String message = "Opponent color: " + opponentColor + " has no move available, swap turn!.";
             Log.i(TAG, message);
-            //Toast.makeText(gamePlayActivity, message, Toast.LENGTH_SHORT).show();
-            return Message.Type.LOST_TURN.getValue();
-        }
 
-        // if logic can reach here it means opponent has his/her turn back
-        opponentLostTurn = false;
+            // Recursive call for opposite color to check if the other has also no other moves
+            currentColor = opponentColor.equals(BLACK.getValue()) ? WHITE.getValue() : BLACK.getValue();
+            for (ChessPiece piece : availablePlaces) {
+                int position = piece.getPosition();
+                piece.setColor(opponentColor); // temporary set color to current color to check this position is available to hit
+                List<Integer> capturedLocations = updateChessBroad(position);
+                piece.setColor(null); // reset color
+                if (capturedLocations.size() > 0) {
+                    numberOfAvailableSlots += capturedLocations.size();
+                }
+            }
+
+            // This case happens when both players have no moves left
+            if (numberOfAvailableSlots == 0) {
+                return Message.Type.GAME_OVER_BY_NO_MOVES_BOTH_PLAYERS.getValue();
+            }
+
+            //Toast.makeText(gamePlayActivity, message, Toast.LENGTH_SHORT).show();
+
+            setYourTurn(true);
+            gamePlayActivity.updateCurrentTurn(true); // opponent lost turn here
+            Toast.makeText(gamePlayActivity, "You get an extra turn because " + opponentColor + " has no other moves", Toast.LENGTH_SHORT).show();
+            return Message.Type.OPPONENT_LOST_TURN.getValue();
+        }
 
         return "";
     }
 
+    /**
+     * Your turn = false + hitOnBoard = true => not your turn
+     * @param yourTurn
+     */
+    public void setYourTurn(boolean yourTurn) {
+        this.yourTurn = yourTurn;
+    }
 }

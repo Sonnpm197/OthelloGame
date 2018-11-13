@@ -42,10 +42,8 @@ public class FirebaseModel {
     private static final String GAME_PLAY_ACTIVITY = GamePlayActivity.class.getSimpleName();
 
     private FirebaseUser currentUser;
-    private String currentUserName = "";
     private FirebaseAuth firebaseAuth;
     private final String TAG;
-    private List<Message> messages; // messages when player quits, send invitation, ect.
     private AppCompatActivity activity;
 
     public FirebaseModel(AppCompatActivity activity) {
@@ -137,7 +135,15 @@ public class FirebaseModel {
     }
 
     public String getCurrentUserId() {
-        return currentUser.getUid();
+        if (currentUser == null) {
+            currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        }
+
+        if (currentUser != null) {
+            return currentUser.getUid();
+        }
+
+        return "";
     }
 
     /**
@@ -147,7 +153,7 @@ public class FirebaseModel {
      * @param email:    must have true email form
      * @param password: cannot less than 6 characters
      */
-    public void createUserWithEmailAndPassword(final String userName, String email, String password) {
+    public void createUserWithEmailAndPassword(final String userName, final String email, String password) {
         firebaseAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(new OnCompleteListener<AuthResult>() {
                     @Override
@@ -161,6 +167,7 @@ public class FirebaseModel {
                             userParams.put("id", getCurrentUserId());
                             userParams.put("userName", userName);
                             userParams.put("status", User.Status.OFFLINE.getValue());
+                            userParams.put("email", email);
 
                             // Add value to table Users
                             userTable.setValue(userParams).addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -314,7 +321,7 @@ public class FirebaseModel {
 
                         if (!gamePlayActivity.getYourColor().equals(receivedPiece.getPieceColor())) {
                             gamePlayActivity.updateBoard(receivedPiece.getLocation(), receivedPiece.getPieceColor(), false);
-                            Log.i(TAG, "Receive different color: " + receivedPiece.getPieceColor() + " -> update to chess board");
+                            //Log.i(TAG, "Receive different color: " + receivedPiece.getPieceColor() + " -> update to chess board");
                         }
 
                         dataSnapshot.getRef().removeValue();

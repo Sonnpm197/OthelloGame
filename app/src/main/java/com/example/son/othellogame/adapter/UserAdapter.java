@@ -17,6 +17,8 @@ import java.util.List;
 import de.hdodenhof.circleimageview.CircleImageView;
 
 import static com.example.son.othellogame.entities.User.Status.OFFLINE;
+import static com.example.son.othellogame.entities.User.Status.ONLINE;
+import static com.example.son.othellogame.entities.User.Status.PLAYING;
 
 public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
@@ -52,9 +54,15 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
         if (user.getStatus().equals(OFFLINE.getValue())) {
             holder.img_off.setVisibility(View.VISIBLE);
             holder.img_on.setVisibility(View.GONE);
-        } else {
-            holder.img_off.setVisibility(View.GONE);
+            holder.img_playing.setVisibility(View.GONE);
+        } else if (user.getStatus().equals(ONLINE.getValue())) {
             holder.img_on.setVisibility(View.VISIBLE);
+            holder.img_off.setVisibility(View.GONE);
+            holder.img_playing.setVisibility(View.GONE);
+        } else if (user.getStatus().equals(PLAYING.getValue())) {
+            holder.img_playing.setVisibility(View.VISIBLE);
+            holder.img_off.setVisibility(View.GONE);
+            holder.img_on.setVisibility(View.GONE);
         }
     }
 
@@ -66,9 +74,10 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
     public class ViewHolder extends RecyclerView.ViewHolder {
 
         TextView userName;
-        TextView userId;
+        TextView userId; // this is a hidden field to know your fiend Id
         CircleImageView img_on;
         CircleImageView img_off;
+        CircleImageView img_playing;
         Button btnInvite;
         String userStatus;
 
@@ -79,6 +88,7 @@ public class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
             userId = (TextView) itemView.findViewById(R.id.userId);
             img_on = (CircleImageView) itemView.findViewById(R.id.img_on);
             img_off = (CircleImageView) itemView.findViewById(R.id.img_off);
+            img_playing = (CircleImageView) itemView.findViewById(R.id.img_playing);
             btnInvite = (Button) itemView.findViewById(R.id.btnInvite);
 
             btnInvite.setOnClickListener(new View.OnClickListener() {

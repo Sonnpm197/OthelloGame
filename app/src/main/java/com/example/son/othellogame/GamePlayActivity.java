@@ -1,11 +1,14 @@
 package com.example.son.othellogame;
 
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.support.v4.app.NavUtils;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -13,6 +16,7 @@ import android.widget.Toast;
 import com.example.son.othellogame.adapter.ChessBroadAdapter;
 import com.example.son.othellogame.entities.ChessPiece;
 import com.example.son.othellogame.entities.Message;
+import com.example.son.othellogame.entities.User;
 import com.example.son.othellogame.firebase.FirebaseModel;
 
 import static com.example.son.othellogame.entities.ChessPiece.PieceColor.BLACK;
@@ -25,6 +29,12 @@ public class GamePlayActivity extends AppCompatActivity implements ChessBroadAda
     private FirebaseModel firebaseModel;
     private String yourColor, opponentColor;
     private String friendId;
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        firebaseModel.updateCurrentUserStatus(User.Status.PLAYING.getValue());
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -53,23 +63,20 @@ public class GamePlayActivity extends AppCompatActivity implements ChessBroadAda
         chessBroadAdapter = new ChessBroadAdapter(this, yourColor, firebaseModel.getCurrentUserId(), friendId, matchNumber);
         chessBroad.setLayoutManager(new GridLayoutManager(this, 8));
         chessBroad.setAdapter(chessBroadAdapter);
-    }
 
-    @Override
-    public void onBackPressed() {
-        // TODO: ask if they really want to exit
+        firebaseModel.receiveMessage(firebaseModel.getCurrentUserId());
     }
 
     /**
-     * Show both player score
-     * @param score
+     * Show both player score on GamePlayActivity
+     * @param scores
      */
-    public void updateScore(String score) {
-        this.score.setText("Score: " + score);
+    public void updateScore(int[] scores) {
+        this.score.setText("Score: Black: " + scores[0] + " / White: " + scores[1]);
     }
 
     /**
-     * Show current turn (black or white)
+     * Show current turn (black or white) on GamePlayActivity
      * @param yourTurn
      */
     public void updateCurrentTurn(boolean yourTurn) {
@@ -110,16 +117,47 @@ public class GamePlayActivity extends AppCompatActivity implements ChessBroadAda
     }
 
     // Send message when lost turn/ full board
-    public void sendResultMessageFromOthelloLogic(String messageType) {
+    public void handleResultMessageFromOthelloLogic(String messageType) {
         // case when both boards are full then go back to MainActivity
-        Intent parentIntent = new Intent(this, MainActivity.class);
         if (messageType.equals(Message.Type.GAME_OVER_BY_FULL_BOARD.getValue())
                 || messageType.equals(Message.Type.GAME_OVER_BY_NO_MOVES_BOTH_PLAYERS.getValue())) {
-            startActivity(parentIntent);
+
+            Toast.makeText(this, messageType, Toast.LENGTH_SHORT).show();
+
+            // Calculate final scores and show result
+            int [] scores = chessBroadAdapter.getOthelloLogic().calculateBlackAndWhitePieces();
+            int blackPieces = scores[0];
+            int whitePieces = scores[1];
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+
+            if (yourColor.equals(BLACK.getValue()) && blackPieces > whitePieces) {
+                builder.setMessage("You win with black color. Result: black: " + blackPieces + " / white: " + whitePieces);
+            } else if (yourColor.equals(BLACK.getValue()) && blackPieces < whitePieces){
+                builder.setMessage("You lost with black color. Result: black:" + blackPieces + " / white: " + whitePieces);
+            } else if (yourColor.equals(WHITE.getValue()) && whitePieces > blackPieces) {
+                builder.setMessage("You win with white color. Result: white:" + whitePieces + " / black: " + blackPieces);
+            } else if (yourColor.equals(WHITE.getValue()) && whitePieces < blackPieces){
+                builder.setMessage("You lost with white color. Result: white:" + whitePieces + " / black: " + blackPieces);
+            } else if (whitePieces == blackPieces) {
+                builder.setMessage("Draw. Result: white:" + whitePieces + " / black: " + blackPieces);
+            }
+
+            builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialogInterface, int i) {
+                    Intent parentIntent = new Intent(GamePlayActivity.this, MainActivity.class);
+                    startActivity(parentIntent);
+                }
+            });
+
+            AlertDialog alertDialog = builder.create();
+            alertDialog.show();
+
             return;
         }
 
-        // Handle case when lost turn
+        // Handle case when opponent lost turn => send notify to opponent
         firebaseModel.sendMessage(userName.getText().toString(), firebaseModel.getCurrentUserId(), friendId, messageType, null);
     }
 
@@ -128,10 +166,33 @@ public class GamePlayActivity extends AppCompatActivity implements ChessBroadAda
      * @param message
      */
     public void handleMessage(Message message) {
-        // Your opponent lost turn
-        if (message.getMessageType().equals(Message.Type.LOST_TURN.getValue())) {
-            chessBroadAdapter.getOthelloLogic().setOpponentLostTurn(true);
-            Toast.makeText(this, "You get a turn, your opponent has no other moves", Toast.LENGTH_SHORT).show();
+        // Your will lost turn if you receive this message
+        if (message.getMessageType().equals(Message.Type.OPPONENT_LOST_TURN.getValue())) {
+            chessBroadAdapter.getOthelloLogic().setYouLostTurn(true);
+            chessBroadAdapter.getOthelloLogic().setYourTurn(false);
+            updateCurrentTurn(false);
+            Toast.makeText(this, "You lost your turn because you have no more moves.", Toast.LENGTH_LONG).show();
+            Log.i(GamePlayActivity.class.getSimpleName(), "You lost your turn because you have no more moves.");
+        } else if (message.getMessageType().equals(Message.Type.QUIT.getValue())) {
+            Toast.makeText(this, "Your opponent has quit. You win", Toast.LENGTH_SHORT).show();
+            startActivity(new Intent(GamePlayActivity.this, MainActivity.class));
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Are you sure you want to go back to main screen ?")
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        firebaseModel.sendMessage(userName.getText().toString(),
+                                firebaseModel.getCurrentUserId(), friendId, Message.Type.QUIT.getValue(), null);
+                        startActivity(new Intent(GamePlayActivity.this, MainActivity.class));
+                    }
+                }).setNegativeButton("Cancel", null);
+
+        AlertDialog alertDialog = builder.create();
+        alertDialog.show();
     }
 }

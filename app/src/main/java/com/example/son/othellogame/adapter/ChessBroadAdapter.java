@@ -64,8 +64,8 @@ public class ChessBroadAdapter extends RecyclerView.Adapter<ChessBroadAdapter.Vi
     @Override
     public void onBindViewHolder(@NonNull ChessBroadAdapter.ViewHolder holder, int position) {
         ChessPiece piece = listChess.get(position);
-        holder.chess.setText("" + (position % OthelloLogic.COLUMN_QUANTITY) + "," + (position / OthelloLogic.COLUMN_QUANTITY) + "\n" + position);
-        holder.chess.setTextColor(Color.RED);
+        //holder.chess.setText("" + (position % OthelloLogic.COLUMN_QUANTITY) + "," + (position / OthelloLogic.COLUMN_QUANTITY) + "\n" + position);
+        //holder.chess.setTextColor(Color.RED);
         // this holder is a piece
         if (piece.getColor() != null) {
             if (piece.getColor().equals(BLACK.getValue())) {
