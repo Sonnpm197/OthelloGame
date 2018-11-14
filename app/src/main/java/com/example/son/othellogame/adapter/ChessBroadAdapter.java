@@ -32,16 +32,9 @@ public class ChessBroadAdapter extends RecyclerView.Adapter<ChessBroadAdapter.Vi
     private String yourId, friendId;
     private int matchNumber;
     private String yourColor;
+    private FirebaseModel firebaseModel;
 
-    /**
-     * GamePlayActivity will handle send and receive chess piece
-     */
-    public interface HandleSendAndReceiveMessage {
-        void receivePieceLocation(String receiverId, int matchNumber);
-        void sendPieceLocation(String senderId, int location, String pieceColor, int matchNumber);
-    }
-
-    public ChessBroadAdapter(GamePlayActivity gamePlayActivity, String yourColor, String yourId, String friendId, int matchNumber) {
+    public ChessBroadAdapter(GamePlayActivity gamePlayActivity, FirebaseModel firebaseModel, String yourColor, String yourId, String friendId, int matchNumber) {
         this.gamePlayActivity = gamePlayActivity;
         this.yourColor = yourColor;
         this.yourId = yourId;
@@ -49,8 +42,9 @@ public class ChessBroadAdapter extends RecyclerView.Adapter<ChessBroadAdapter.Vi
         this.matchNumber = matchNumber;
         othelloLogic = new OthelloLogic(gamePlayActivity, yourColor);
         listChess = othelloLogic.createBroad();
+        this.firebaseModel = firebaseModel;
 
-        gamePlayActivity.receivePieceLocation(friendId, matchNumber);
+        firebaseModel.receivePieceLocation(friendId, matchNumber, this);
     }
 
     @NonNull
@@ -93,7 +87,15 @@ public class ChessBroadAdapter extends RecyclerView.Adapter<ChessBroadAdapter.Vi
                 public void onClick(View view) {
                     String result = updateBoard(getPosition(), yourColor, true);
                     if (result.equals("OK")) {
-                        gamePlayActivity.sendPieceLocation(yourId, getPosition(), yourColor, matchNumber);
+                        /**
+                         * If your opponent sends a piece object then you will query data from:
+                         * matchNumber
+                         *      your opponent Id
+                         *          sentObject1
+                         * @param receiverId
+                         * @param matchNumber
+                         */
+                        firebaseModel.sendPieceLocation(yourId, getPosition(), yourColor, matchNumber);
                     }
                 }
             });
@@ -125,5 +127,9 @@ public class ChessBroadAdapter extends RecyclerView.Adapter<ChessBroadAdapter.Vi
 
     public OthelloLogic getOthelloLogic() {
         return othelloLogic;
+    }
+
+    public String getYourColor() {
+        return yourColor;
     }
 }

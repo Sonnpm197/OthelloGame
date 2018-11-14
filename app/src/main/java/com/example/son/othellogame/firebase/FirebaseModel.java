@@ -305,51 +305,44 @@ public class FirebaseModel {
      *
      * @return friendId
      */
-    public void receivePieceLocation(String friendId, final int matchNumber) {
+    public void receivePieceLocation(String friendId, final int matchNumber, final ChessBroadAdapter chessBroadAdapter) {
 
-        if (getExactActivityName().equals(GAME_PLAY_ACTIVITY)) {
-            final GamePlayActivity gamePlayActivity = (GamePlayActivity) activity;
+        DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("Games")
+                .child(String.valueOf(matchNumber)).child(friendId); // query data from sender(fiend) to get sent piece from he/she
+        databaseReference.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+                PlayingPiece receivedPiece = dataSnapshot.getValue(PlayingPiece.class);
+                Log.i(TAG, "Receive: " + receivedPiece.toString() + " ; match number: " + matchNumber);
 
-            if (gamePlayActivity != null) {
-                DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("Games")
-                        .child(String.valueOf(matchNumber)).child(friendId); // query data from sender(fiend) to get sent piece from he/she
-                databaseReference.addChildEventListener(new ChildEventListener() {
-                    @Override
-                    public void onChildAdded(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-                        PlayingPiece receivedPiece = dataSnapshot.getValue(PlayingPiece.class);
-                        Log.i(TAG, "Receive: " + receivedPiece.toString() + " ; match number: " + matchNumber);
+                if (!chessBroadAdapter.getYourColor().equals(receivedPiece.getPieceColor())){
+                    chessBroadAdapter.updateBoard(receivedPiece.getLocation(), receivedPiece.getPieceColor(), false);
+                    //Log.i(TAG, "Receive different color: " + receivedPiece.getPieceColor() + " -> update to chess board");
+                }
 
-                        if (!gamePlayActivity.getYourColor().equals(receivedPiece.getPieceColor())) {
-                            gamePlayActivity.updateBoard(receivedPiece.getLocation(), receivedPiece.getPieceColor(), false);
-                            //Log.i(TAG, "Receive different color: " + receivedPiece.getPieceColor() + " -> update to chess board");
-                        }
-
-                        dataSnapshot.getRef().removeValue();
-                    }
-
-                    @Override
-                    public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                    }
-
-                    @Override
-                    public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
-
-                    }
-
-                    @Override
-                    public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
-
-                    }
-
-                    @Override
-                    public void onCancelled(@NonNull DatabaseError databaseError) {
-
-                    }
-                });
+                dataSnapshot.getRef().removeValue();
             }
-        }
 
+            @Override
+            public void onChildChanged(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(@NonNull DataSnapshot dataSnapshot) {
+
+            }
+
+            @Override
+            public void onChildMoved(@NonNull DataSnapshot dataSnapshot, @Nullable String s) {
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError databaseError) {
+
+            }
+        });
     }
 
     /**

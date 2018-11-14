@@ -22,7 +22,7 @@ import com.example.son.othellogame.firebase.FirebaseModel;
 import static com.example.son.othellogame.entities.ChessPiece.PieceColor.BLACK;
 import static com.example.son.othellogame.entities.ChessPiece.PieceColor.WHITE;
 
-public class GamePlayActivity extends AppCompatActivity implements ChessBroadAdapter.HandleSendAndReceiveMessage {
+public class GamePlayActivity extends AppCompatActivity {
 
     private TextView userName, color, score, currentTurn;
     private ChessBroadAdapter chessBroadAdapter;
@@ -60,7 +60,7 @@ public class GamePlayActivity extends AppCompatActivity implements ChessBroadAda
 
         firebaseModel = new FirebaseModel(this);
         RecyclerView chessBroad = (RecyclerView) findViewById(R.id.chessBroad);
-        chessBroadAdapter = new ChessBroadAdapter(this, yourColor, firebaseModel.getCurrentUserId(), friendId, matchNumber);
+        chessBroadAdapter = new ChessBroadAdapter(this, firebaseModel, yourColor, firebaseModel.getCurrentUserId(), friendId, matchNumber);
         chessBroad.setLayoutManager(new GridLayoutManager(this, 8));
         chessBroad.setAdapter(chessBroadAdapter);
 
@@ -82,38 +82,6 @@ public class GamePlayActivity extends AppCompatActivity implements ChessBroadAda
     public void updateCurrentTurn(boolean yourTurn) {
         String turn = yourTurn ? yourColor : opponentColor;
         this.currentTurn.setText("Turn: " + turn);
-    }
-
-    /**
-     * If your opponent sends a piece object then you will query data from:
-     * matchNumber
-     *      your opponent Id
-     *          sentObject1
-     * @param receiverId
-     * @param matchNumber
-     */
-    @Override
-    public void receivePieceLocation(String receiverId, int matchNumber) {
-        firebaseModel.receivePieceLocation(receiverId, matchNumber);
-    }
-
-    @Override
-    public void sendPieceLocation(String senderId, int location, String pieceColor, int matchNumber) {
-        firebaseModel.sendPieceLocation(firebaseModel.getCurrentUserId(), location, pieceColor, matchNumber);
-    }
-
-    /**
-     * This method will be called in firebaseModel.receivePieceLocation
-     * @param clickedPosition
-     * @param color
-     * @param hitOnBoard
-     */
-    public void updateBoard(int clickedPosition, String color, boolean hitOnBoard) {
-        chessBroadAdapter.updateBoard(clickedPosition, color, hitOnBoard);
-    }
-
-    public String getYourColor() {
-        return yourColor;
     }
 
     // Send message when lost turn/ full board
